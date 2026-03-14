@@ -101,15 +101,25 @@ class TestPrompts:
 
     def test_prompt_has_few_shot_examples(self, all_prompts):
         """Verifica se o prompt contém exemplos de entrada/saída (técnica Few-shot)."""
-        # O próprio push_prompts.py valida assim (Exemplo + Bug/INPUT e Output/OUTPUT)
         for name, prompt_data in all_prompts:
             system_prompt = (prompt_data.get("system_prompt") or "")
-            has_exemplo = "Exemplo" in system_prompt
-            has_io_pairs = (("Bug:" in system_prompt and "Output:" in system_prompt) or
-                            ("INPUT:" in system_prompt and "OUTPUT:" in system_prompt))
-            assert has_exemplo and has_io_pairs, (
+
+            # Aceita os padrões: Bug/User Story (formato do v2), Bug/Output ou INPUT/OUTPUT
+            has_bug_marker = "Bug:" in system_prompt
+            has_output_marker = (
+                "User Story:" in system_prompt or
+                "Output:" in system_prompt or
+                "OUTPUT:" in system_prompt
+            )
+
+            # Pelo menos 2 exemplos (2 ocorrências de "Bug:")
+            bug_count = system_prompt.count("Bug:")
+            has_multiple_examples = bug_count >= 2
+
+            assert has_bug_marker and has_output_marker and has_multiple_examples, (
                 f"'{name}' parece não conter few-shot de entrada/saída no system_prompt. "
-                "Esperado conter 'Exemplo' e pares Bug/Output ou INPUT/OUTPUT."
+                f"Encontrados {bug_count} exemplo(s) com 'Bug:'. "
+                "Esperado pelo menos 2 exemplos com pares Bug:/User Story: ou Bug:/Output:."
             )
 
     def test_prompt_no_todos(self, all_prompts):
